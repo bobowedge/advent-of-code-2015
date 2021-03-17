@@ -2,6 +2,10 @@
 #include <vector>
 #include <string>
 
+/**
+ *  Read the data from the input file into a vector of strings,
+ *   one line per element
+ */
 std::vector<std::string> data_lines(const std::string& filename)
 {
     std::vector<std::string> dataLines;
@@ -15,6 +19,7 @@ std::vector<std::string> data_lines(const std::string& filename)
     return dataLines;
 }
 
+// Do a reduction to sum the elements created by each thread in a block 
 __device__ void reduction(int64_t *cache, int64_t cacheIndex)
 {
     int64_t index = blockDim.x >> 1;
@@ -30,6 +35,7 @@ __device__ void reduction(int64_t *cache, int64_t cacheIndex)
     return;
 }
 
+// Do a reduction to sum the elements created by each thread in a 2D block
 __device__ void reduction2D(int *cache, int64_t cacheIndex)
 {
     int64_t index = (blockDim.x * blockDim.y) >> 1;
