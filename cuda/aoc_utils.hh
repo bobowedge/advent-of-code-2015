@@ -2,10 +2,7 @@
 #include <vector>
 #include <string>
 
-/**
- *  Read the data from the input file into a vector of strings,
- *   one line per element
- */
+// Read the data from the input file into a vector of strings, one line per element
 std::vector<std::string> data_lines(const std::string& filename)
 {
     std::vector<std::string> dataLines;
