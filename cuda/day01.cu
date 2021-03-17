@@ -23,6 +23,7 @@ __global__ void count_floors(char *instructions, int64_t *result,
 {
     // Core device loop
     int64_t threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    // Sum for this thread
     int64_t sum = 0;
     while (threadIndex < N)
     {
