@@ -30,7 +30,7 @@ __device__ void itoa(int32_t N, char* Nchar, size_t Nsize)
     Nchar[Nsize] = '\0';
 }
 
-// Concatenate two C-strings together
+// Concatenate key and Nchar together
 __device__ void concat(char* str, const char* key, unsigned int keyLength, 
                        const char* Nchar, unsigned int Nsize)
 {
@@ -72,7 +72,7 @@ __global__ void MD5_find(char* key, unsigned int keyLength, int numZeros)
     // Loop until a solution is found
     while(true)
     {
-        // Size of Nchar
+        // Size of N as string
         Nsize = (size_t)log10((double)N) + 1;
         // Convert N to string
         itoa(N, Nchar, Nsize);
@@ -85,7 +85,6 @@ __global__ void MD5_find(char* key, unsigned int keyLength, int numZeros)
         // Check for 6 zeros: 00 00 00
         if (hash[0] == 0 && hash[1] == 0)
         {
-
             if ( (numZeros == 5 && hash[2] < 16) ||
                  (numZeros == 6 && hash[2] == 0) )
             {
