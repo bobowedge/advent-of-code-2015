@@ -23,7 +23,7 @@ cities = list(cities)
 min_distance = None
 max_distance = None
 best_route = None
-for route in itertools.product(cities, repeat=len(cities)):
+for route in itertools.permutations(cities):
     c = set(route)
     if len(c) != len_cities:
         continue
