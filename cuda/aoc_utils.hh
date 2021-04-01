@@ -31,19 +31,3 @@ __device__ void reduction(int64_t *cache, int64_t cacheIndex)
     }
     return;
 }
-
-// Do a reduction to sum the elements created by each thread in a 2D block
-__device__ void reduction2D(int *cache, int64_t cacheIndex)
-{
-    int64_t index = (blockDim.x * blockDim.y) >> 1;
-    while (index > 0)
-    {
-        if (cacheIndex < index)
-        {
-            cache[cacheIndex] += cache[cacheIndex + index];
-        }
-        __syncthreads();
-        index >>= 1;
-    }
-    return;
-}
