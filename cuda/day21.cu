@@ -1,11 +1,14 @@
 #include <iostream>
 
+// Weapon costs and damages
 __constant__ int WEAPON_COSTS[5] = {8, 10, 25, 40, 74};
 __constant__ int WEAPON_DAMAGES[5] = {4, 5, 6, 7, 8};
 
+// Armor costs and values
 __constant__ int ARMOR_COSTS[6] = {0, 13, 31, 53, 75, 102};
 __constant__ int ARMOR_VALUES[6] = {0, 1, 2, 3, 4, 5};
 
+// Rings costs, damage buffs, and armor buffs
 __constant__ int RINGS_COSTS[22] = {0, 25, 50, 100, 20, 40, 80, 
     75, 125, 45, 65, 105, 150, 70, 90, 130, 120, 140, 180, 60, 100, 120};
 __constant__ int RINGS_DAMAGES[22] = {0, 1, 2, 3, 0, 0, 0,
@@ -13,40 +16,54 @@ __constant__ int RINGS_DAMAGES[22] = {0, 1, 2, 3, 0, 0, 0,
 __constant__ int RINGS_ARMOR[22] = {0, 0, 0, 0, 1, 2, 3,
     0, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 3, 4, 5};
 
-__constant__ int MY_HIT_POINTS = 100;
-__constant__ int BOSS_HIT_POINTS = 103;
+// Player starting HP    
+__constant__ int PLAYER_HP = 100;
+// Boss' starting HP
+__constant__ int BOSS_HP = 103;
+// Boss' damage
 __constant__ int BOSS_DAMAGE = 9;
+// Boss' armor
 __constant__ int BOSS_ARMOR = 2;
 
+// 5 weapons, 6 armors (including none), 22 ring combinations (0-2 unique rings: 1 + 6 + 15)
 const int COMBINATIONS = 5 * 6 * 22;
-// const int THREADS = COMBINATIONS;
-const int THREADS = 1;
+const int THREADS = COMBINATIONS;
+// const int THREADS = 1;
 
-__device__ __managed__ int bestCost = 500;
+// Cost for Part 1 (746 = buy everything, which is not possible)
+__device__ __managed__ int bestCost = 746;
+// Cost for Part 2 (buy nothing)
 __device__ __managed__ int worstCost = 0;
 
-__device__ bool win_fight(int myDamage, int myArmor)
+// Given an input damage and armor, decide who wins fight (true is Player)
+__device__ bool win_fight(int playerDamage, int playerArmor)
 {
-    int bossHitPoints = BOSS_HIT_POINTS;
-    int myHitPoints = MY_HIT_POINTS;
+    int bossHP = BOSS_HP;
+    int playerHP = PLAYER_HP;
 
-    int bossNetDamage = BOSS_DAMAGE - myArmor;
-    int myNetDamage = myDamage - BOSS_ARMOR;
+    int bossNetDamage = BOSS_DAMAGE - playerArmor;
     if (bossNetDamage <= 0)
-        bossNetDamage = 1;
-    if (myNetDamage <= 0)
-        myNetDamage = 1;
-
-    while (bossHitPoints > 0 && myHitPoints > 0)
     {
-        bossHitPoints -= myNetDamage;
-        myHitPoints -= bossNetDamage;
+        bossNetDamage = 1;
     }
-    if (bossHitPoints <= 0)
-        return true;
-    return false;
+    int playerNetDamage = playerDamage - BOSS_ARMOR;
+    if (playerNetDamage <= 0)
+    {
+        playerNetDamage = 1;
+    }
+
+    // Attack until at least one HP <= 0
+    while (bossHP > 0 && playerHP > 0)
+    {
+        bossHP -= playerNetDamage;
+        playerHP -= bossNetDamage;
+    }
+
+    // Player wins if bossHP <= 0
+    return (bossHP <= 0);
 }
 
+// Convert number N to combination cost, damage, and armor
 __device__ void calculate_equipment(int N, 
     int& cost, int& damage, int& armor)
 {
@@ -66,27 +83,31 @@ __device__ void calculate_equipment(int N,
     damage += RINGS_DAMAGES[ringIndex];
     armor += RINGS_ARMOR[ringIndex];
     cost += RINGS_COSTS[ringIndex];
-
     return;
 }
 
+// Find best cost for Part 1 and worst cost for Part 2
 __global__ void find_costs()
 {
+    int playerCost = 0;
+    int playerDamage = 0;
+    int playerArmor = 0;
     for(int N = threadIdx.x; N < COMBINATIONS; N += blockDim.x)
     {
-        int myCost = 0;
-        int myDamage = 0;
-        int myArmor = 0;
-        calculate_equipment(N, myCost, myDamage, myArmor);
+        // Convert N to equipment
+        calculate_equipment(N, playerCost, playerDamage, playerArmor);
 
-        bool winner = win_fight(myDamage, myArmor);
-        if (winner && myCost < bestCost)
+        // Determine fight winner
+        bool winner = win_fight(playerDamage, playerArmor);
+        // Set best cost for Part 1
+        if (winner && playerCost < bestCost)
         {
-            atomicMin(&bestCost, myCost);
+            atomicMin(&bestCost, playerCost);
         }
-        if (!winner && myCost > worstCost)
+        // Set worst cost for Part 2
+        if (!winner && playerCost > worstCost)
         {
-            atomicMax(&worstCost, myCost);
+            atomicMax(&worstCost, playerCost);
         }
     }
 }
