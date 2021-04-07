@@ -1,12 +1,12 @@
+#pragma once
 #include <cstdint>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-const size_t TSIZE = 43;
-
-std::map<std::string, std::vector<std::string>> TRANSFORMS_MAP = {
+// Transforms given
+static const std::map<std::string, std::vector<std::string>> TRANSFORMS_MAP = {
     std::make_pair(std::string("Al"), std::vector<std::string>{std::string("ThF"), std::string("ThRnFAr")}),
     std::make_pair(std::string("B"), std::vector<std::string>{std::string("BCa"), std::string("TiB"), std::string("TiRnFAr")}),
     std::make_pair(std::string("Ca"), std::vector<std::string>{std::string("CaCa"), std::string("PB"), std::string("PRnFAr"), std::string("SiRnFYFAr"), std::string("SiRnMgAr"), std::string("SiTh")}),
@@ -19,17 +19,26 @@ std::map<std::string, std::vector<std::string>> TRANSFORMS_MAP = {
     std::make_pair(std::string("Si"), std::vector<std::string>{std::string("CaSi")}),
     std::make_pair(std::string("Th"), std::vector<std::string>{std::string("ThCa")}),
     std::make_pair(std::string("Ti"), std::vector<std::string>{std::string("BP"), std::string("TiTi")}),
-    std::make_pair(std::string("E"), std::vector<std::string>{std::string("HF"), std::string("NAl"), std::string("OMg")})
+    std::make_pair(std::string("e"), std::vector<std::string>{std::string("HF"), std::string("NAl"), std::string("OMg")})
 };
 
-const std::string MOLECULE_STRING = "CRnCaSiRnBSiRnFArTiBPTiTiBFArPBCaSiThSiRnTiBPBPMgArCaSiRnTiMgArCaSiThCaSiRnFArRnSiRnFArTiTiBFArCaCaSiRnSiThCaCaSiRnMgArFYSiRnFYCaFArSiThCaSiThPBPTiMgArCaPRnSiAlArPBCaCaSiRnFYSiThCaRnFArArCaCaSiRnPBSiRnFArMgYCaCaCaCaSiThCaCaSiAlArCaCaSiRnPBSiAlArBCaCaCaCaSiThCaPBSiThPBPBCaSiRnFYFArSiThCaSiRnFArBCaCaSiRnFYFArSiThCaPBSiThCaSiRnPMgArRnFArPTiBCaPRnFArCaCaCaCaSiRnCaCaSiRnFYFArFArBCaSiThFArThSiThSiRnTiRnPMgArFArCaSiThCaPBCaSiRnBFArCaCaPRnCaCaPMgArSiRnFYFArCaSiThRnPBPMgAr";
+// Vector possible elements
+static const std::vector<std::string> ELEMENTS = {
+    std::string("Al"), std::string("Ar"), std::string("B"), std::string("C"), std::string("Ca"), std::string("F"), std::string("H"), 
+    std::string("Mg"), std::string("N"), std::string("O"), std::string("P"), std::string("Rn"), std::string("Si"), std::string("Th"), 
+    std::string("Ti"), std::string("Y"), std::string("e")};
 
-const std::vector<std::string> ELEMENTS = {std::string("Al"), std::string("Ar"), std::string("B"), std::string("C"), std::string("Ca"), std::string("F"), std::string("H"), 
-                                           std::string("Mg"), std::string("N"), std::string("O"), std::string("P"), std::string("Rn"), std::string("Si"), std::string("Th"), 
-                                           std::string("Ti"), std::string("Y"), std::string("E")};
+// Number of transforms given
+constexpr size_t TSIZE = 43;
 
-__device__ __managed__ size_t TSIZES[TSIZE] = {3, 5, 3, 3, 5, 3, 3, 5, 7, 5, 3, 3, 3, 3, 3, 3, 3, 5, 9, 7, 7, 3, 7, 5, 3, 3, 5, 3, 3, 5, 3, 7, 5, 3, 5, 3, 3, 3, 5, 3, 3, 3, 3};
-__device__ __managed__ int64_t TRANSFORMS[TSIZE][9] = {
+// List of sizes for each transform
+__device__ __managed__ uint8_t TSIZES[TSIZE] = {
+    3, 5, 3, 3, 5, 3, 3, 5, 7, 5, 3, 3, 3, 3, 3, 3, 
+    3, 5, 9, 7, 7, 3, 7, 5, 3, 3, 5, 3, 3, 5, 3, 7, 
+    5, 3, 5, 3, 3, 3, 5, 3, 3, 3, 3};
+
+// Set of transforms
+__device__ __managed__ int8_t TRANSFORMS[TSIZE][9] = {
     {0, 13, 5, -1, -1, -1, -1, -1, -1},
     {0, 13, 11, 5, 1, -1, -1, -1, -1},
     {2, 2, 4, -1, -1, -1, -1, -1, -1},
@@ -75,9 +84,10 @@ __device__ __managed__ int64_t TRANSFORMS[TSIZE][9] = {
     {14, 14, 14, -1, -1, -1, -1, -1, -1}
 };
 
-std::vector<int64_t> to_int64(const std::string& x)
+// Convert a string to a list of integers, based on ELEMENTS
+__host__ std::vector<int8_t> to_int8(const std::string& x)
 {
-    std::vector<int64_t> output;
+    std::vector<int8_t> output;
     size_t idx = 0;
     while (idx < x.size())
     {
@@ -94,16 +104,18 @@ std::vector<int64_t> to_int64(const std::string& x)
     return output;
 }
 
-std::vector<std::vector<int64_t>> convert_transforms(const std::map<std::string, std::vector<std::string>>& t)
+
+// Function used to convert TRANSFORMS_MAP to TRANSFORMS
+static __host__ std::vector<std::vector<int8_t>> convert_transforms(const std::map<std::string, std::vector<std::string>>& t)
 {
-    std::vector<std::vector<int64_t>> output;
+    std::vector<std::vector<int8_t>> output;
     for (const auto& p : t)
     {
-        auto key = to_int64(p.first);
+        auto key = to_int8(p.first);
         for(const auto& values : p.second)
         {            
             auto row = key;
-            auto converted = to_int64(values);
+            auto converted = to_int8(values);
             row.insert(row.end(), converted.begin(), converted.end());
             output.push_back(row);
         }
